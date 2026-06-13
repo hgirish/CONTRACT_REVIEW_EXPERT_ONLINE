@@ -1,8 +1,7 @@
 import os
 from llama_index.core import Settings
 from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.ollama import OllamaEmbedding
-
+from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
 CLOUD_BASE_URL = "https://ollama.com"
 
@@ -40,9 +39,16 @@ def configure_ollama():
         headers=headers,
     )
 
-    Settings.embed_model = OllamaEmbedding(
-        model_name="nomic-embed-text:cloud",
-        base_url=CLOUD_BASE_URL,
-        request_timeout=6000,
-        client_kwargs={"headers": headers},
+    google_api_key = os.environ.get(
+        "GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
+    if not google_api_key:
+        st.error(
+            "🔑 Missing GOOGLE_API_KEY in Streamlit Cloud Secrets dashboard or environment for Google embedding!"
+        )
+        st.stop()
+
+    Settings.embed_model = GoogleGenAIEmbedding(
+        model_name="gemini-embedding-2-preview",
+        api_key=google_api_key,
+        timeout=6000,
     )

@@ -2,7 +2,7 @@ import os
 import streamlit as st
 from llama_index.core import Settings
 from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
 st.title("🦙 LlamaIndex + Ollama Cloud Production")
 
@@ -31,14 +31,20 @@ Settings.llm = Ollama(
     headers=headers,
 )
 
-# 4. Setup Remote Embeddings with identical token authentication
-Settings.embed_model = OllamaEmbedding(
-    model_name="nomic-embed-text:cloud",
-    base_url=CLOUD_BASE_URL,
-    request_timeout=6000,
-    # Adds proper cloud auth
-    client_kwargs={"headers": headers},
-)
+# 4. Setup Remote Embeddings with Google GenAI
+google_api_key = os.environ.get(
+    "GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
+if google_api_key:
+    Settings.embed_model = GoogleGenAIEmbedding(
+        model_name="gemini-embedding-2-preview",
+        api_key=google_api_key,
+        timeout=6000,
+    )
+else:
+    st.error(
+        "🔑 Missing GOOGLE_API_KEY in Streamlit Cloud Secrets dashboard or environment for Google embeddings!"
+    )
+    st.stop()
 
 # --- Basic UI Inference Check ---
 user_query = st.text_input("Ask your cloud-hosted developer model:")
