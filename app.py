@@ -6,34 +6,38 @@ from llama_index.embeddings.ollama import OllamaEmbedding
 
 st.title("🦙 LlamaIndex + Ollama Cloud Production")
 
-# 1. Force the API key validation check
+# 1. Fetch and store the Ollama API Key securely
 if "OLLAMA_API_KEY" in st.secrets:
-    os.environ["OLLAMA_API_KEY"] = st.secrets["OLLAMA_API_KEY"]
+    api_key = st.secrets["OLLAMA_API_KEY"]
+    os.environ["OLLAMA_API_KEY"] = api_key
 else:
     st.error("🔑 Missing OLLAMA_API_KEY in Streamlit Cloud Secrets dashboard!")
     st.stop()
 
-# 2. Point to Ollama's Universal Cloud API Gateway
-# Explicitly setting base_url prevents LlamaIndex from checking localhost
-CLOUD_GATEWAY = "https://ollama.com/api"
+# 2. Point to the root cloud URL (LlamaIndex automatically adds /api internally)
+CLOUD_BASE_URL = "https://ollama.com"
 
-# 3. Configure the Remote LLM
+# 3. Setup the Remote LLM with header authorization injection
 Settings.llm = Ollama(
     model="qwen3-coder-next:cloud",
-    base_url=CLOUD_GATEWAY,  # <-- Critical parameter change
+    base_url=CLOUD_BASE_URL,
     temperature=0.8,
     context_window=16000,
-    request_timeout=6030.0
+    request_timeout=6030.0,
+    # Adds proper cloud auth
+    additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}}
 )
 
-# 4. Configure Remote Embeddings
+# 4. Setup Remote Embeddings with identical token authentication
 Settings.embed_model = OllamaEmbedding(
     model_name="nomic-embed-text:cloud",
-    base_url=CLOUD_GATEWAY,  # <-- Critical parameter change
-    request_timeout=6000
+    base_url=CLOUD_BASE_URL,
+    request_timeout=6000,
+    # Adds proper cloud auth
+    additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}}
 )
 
-# --- App Interface ---
+# --- Basic UI Inference Check ---
 user_query = st.text_input("Ask your cloud-hosted developer model:")
 if user_query:
     with st.spinner("Streaming response from Ollama Cloud infrastructure..."):
