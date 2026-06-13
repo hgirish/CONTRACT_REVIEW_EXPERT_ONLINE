@@ -8,6 +8,7 @@ import os
 # The underlying Ollama library automatically looks for OLLAMA_API_KEY
 if "OLLAMA_API_KEY" in st.secrets:
     os.environ["OLLAMA_API_KEY"] = st.secrets["OLLAMA_API_KEY"]
+    st.info("ollama api key found")
 else:
     st.error("Missing OLLAMA_API_KEY in Streamlit Secrets!")
     st.stop()
