@@ -20,12 +20,16 @@ def configure_ollama():
         raise RuntimeError(
             "Streamlit is required to configure Ollama in this app.")
 
-    if "OLLAMA_API_KEY" in st.secrets:
-        api_key = st.secrets["OLLAMA_API_KEY"]
+    api_key = os.environ.get(
+        "OLLAMA_API_KEY") or st.secrets.get("OLLAMA_API_KEY")
+    if api_key:
         os.environ["OLLAMA_API_KEY"] = api_key
     else:
-        st.error("🔑 Missing OLLAMA_API_KEY in Streamlit Cloud Secrets dashboard!")
+        st.error(
+            "🔑 Missing OLLAMA_API_KEY in Streamlit Cloud Secrets dashboard or environment!")
         st.stop()
+
+    headers = {"Authorization": f"Bearer {api_key}"}
 
     Settings.llm = Ollama(
         model="qwen3-coder-next:cloud",
@@ -33,12 +37,12 @@ def configure_ollama():
         temperature=0.8,
         context_window=16000,
         request_timeout=6030.0,
-        additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}},
+        headers=headers,
     )
 
     Settings.embed_model = OllamaEmbedding(
         model_name="nomic-embed-text:cloud",
         base_url=CLOUD_BASE_URL,
         request_timeout=6000,
-        additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}},
+        client_kwargs={"headers": headers},
     )

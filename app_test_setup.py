@@ -7,12 +7,15 @@ from llama_index.embeddings.ollama import OllamaEmbedding
 st.title("🦙 LlamaIndex + Ollama Cloud Production")
 
 # 1. Fetch and store the Ollama API Key securely
-if "OLLAMA_API_KEY" in st.secrets:
-    api_key = st.secrets["OLLAMA_API_KEY"]
+api_key = os.environ.get("OLLAMA_API_KEY") or st.secrets.get("OLLAMA_API_KEY")
+if api_key:
     os.environ["OLLAMA_API_KEY"] = api_key
 else:
-    st.error("🔑 Missing OLLAMA_API_KEY in Streamlit Cloud Secrets dashboard!")
+    st.error(
+        "🔑 Missing OLLAMA_API_KEY in Streamlit Cloud Secrets dashboard or environment!")
     st.stop()
+
+headers = {"Authorization": f"Bearer {api_key}"}
 
 # 2. Point to the root cloud URL (LlamaIndex automatically adds /api internally)
 CLOUD_BASE_URL = "https://ollama.com"
@@ -25,7 +28,7 @@ Settings.llm = Ollama(
     context_window=16000,
     request_timeout=6030.0,
     # Adds proper cloud auth
-    additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}}
+    headers=headers,
 )
 
 # 4. Setup Remote Embeddings with identical token authentication
@@ -34,7 +37,7 @@ Settings.embed_model = OllamaEmbedding(
     base_url=CLOUD_BASE_URL,
     request_timeout=6000,
     # Adds proper cloud auth
-    additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}}
+    client_kwargs={"headers": headers},
 )
 
 # --- Basic UI Inference Check ---
