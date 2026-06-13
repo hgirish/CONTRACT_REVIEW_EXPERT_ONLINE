@@ -1,8 +1,13 @@
-import streamlit as st
-from policies import render_policies_section
-from contracts import render_contracts_section
-from reports import render_reports_section
 from configs import configure_ollama
+from reports import render_reports_section
+from contracts import render_contracts_section
+from policies import render_policies_section
+import streamlit as st
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+
 
 configure_ollama()
 
