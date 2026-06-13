@@ -2,6 +2,9 @@ import streamlit as st
 from policies import render_policies_section
 from contracts import render_contracts_section
 from reports import render_reports_section
+from configs import configure_ollama
+
+configure_ollama()
 
 # Set page config to wide layout
 st.set_page_config(

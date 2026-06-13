@@ -1,59 +1,44 @@
+import os
 from llama_index.core import Settings
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.ollama import OllamaEmbedding
-import streamlit as st
-import os
 
 
-# 1. Fetch and store the Ollama API Key securely
-if "OLLAMA_API_KEY" in st.secrets:
-    api_key = st.secrets["OLLAMA_API_KEY"]
-    os.environ["OLLAMA_API_KEY"] = api_key
-else:
-    st.error("🔑 Missing OLLAMA_API_KEY in Streamlit Cloud Secrets dashboard!")
-    st.stop()
-
-# 2. Point to the root cloud URL (LlamaIndex automatically adds /api internally)
 CLOUD_BASE_URL = "https://ollama.com"
 
-# 3. Setup the Remote LLM with header authorization injection
-Settings.llm = Ollama(
-    model="qwen3-coder-next:cloud",
-    base_url=CLOUD_BASE_URL,
-    temperature=0.8,
-    context_window=16000,
-    request_timeout=6030.0,
-    # Adds proper cloud auth
-    additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}}
-)
-
-# 4. Setup Remote Embeddings with identical token authentication
-Settings.embed_model = OllamaEmbedding(
-    model_name="nomic-embed-text:cloud",
-    base_url=CLOUD_BASE_URL,
-    request_timeout=6000,
-    # Adds proper cloud auth
-    additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}}
-)
-
-
-# # Configure the LLM model
-# Settings.llm = Ollama(
-#     model="qwen3-coder-next:cloud",
-#     base_url="http://localhost:11434",
-#     temperature=0.8,
-#     context_window=16000,
-#     request_timeout=6030.0
-# )
-
-# # Configure the embedding model
-# Settings.embed_model = OllamaEmbedding(
-#     model_name="nomic-embed-text",
-#     base_url="http://localhost:11434",
-#     request_timeout=6000
-# )
-
-# Paths for persisisting indexes
+# Paths for persisting indexes
 POLICIES_INDEX_PATH = "data/persistence/policies_index"
 CONTRACTS_INDEX_PATH = "data/persistence/contracts_index"
 REPORTS_INDEX_PATH = "data/persistence/reports_index"
+
+
+def configure_ollama():
+    """Configure the Ollama LLM and embeddings at runtime."""
+    try:
+        import streamlit as st
+    except ImportError:
+        raise RuntimeError(
+            "Streamlit is required to configure Ollama in this app.")
+
+    if "OLLAMA_API_KEY" in st.secrets:
+        api_key = st.secrets["OLLAMA_API_KEY"]
+        os.environ["OLLAMA_API_KEY"] = api_key
+    else:
+        st.error("🔑 Missing OLLAMA_API_KEY in Streamlit Cloud Secrets dashboard!")
+        st.stop()
+
+    Settings.llm = Ollama(
+        model="qwen3-coder-next:cloud",
+        base_url=CLOUD_BASE_URL,
+        temperature=0.8,
+        context_window=16000,
+        request_timeout=6030.0,
+        additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}},
+    )
+
+    Settings.embed_model = OllamaEmbedding(
+        model_name="nomic-embed-text:cloud",
+        base_url=CLOUD_BASE_URL,
+        request_timeout=6000,
+        additional_kwargs={"headers": {"Authorization": f"Bearer {api_key}"}},
+    )

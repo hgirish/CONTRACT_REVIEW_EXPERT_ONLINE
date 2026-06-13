@@ -1,11 +1,7 @@
-import configs
 import os
 from pathlib import Path
 from llama_index.core import StorageContext, VectorStoreIndex, load_index_from_storage
 from llama_index.core.readers import SimpleDirectoryReader
-
-# base_dir = os.path.dirname(__file__)
-persist_dir = configs.POLICIES_INDEX_PATH
 
 
 def save_file(uploaded_file, folder):
@@ -17,6 +13,9 @@ def save_file(uploaded_file, folder):
 
 
 def load_policies_index():
+    from configs import POLICIES_INDEX_PATH
+
+    persist_dir = POLICIES_INDEX_PATH
     index_file = os.path.join(persist_dir, "docstore.json")
     if os.path.exists(index_file):
         print("Loading existing policies index from persistence")
@@ -24,7 +23,6 @@ def load_policies_index():
             persist_dir=persist_dir)
         index = load_index_from_storage(storage_context)
     else:
-        # os.path.join(base_dir, "data", "policies")
         policy_dir = "data/policies"
         print("No valid index found - rebuilding policies index...")
         reader = SimpleDirectoryReader(policy_dir)
