@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 from utils import save_file, load_policies_index, list_files
-from chat import clear_chat_cache
 
 
 def render_policies_section(is_analyzing):
@@ -51,6 +50,8 @@ def render_policies_section(is_analyzing):
                     st.success(f"Deleted policy: {file}")
 
                     # Clear chat cache for all contracts since policies changed
+                    from chat import clear_chat_cache
+
                     contract_files = list_files("data/contracts")
                     for contract_file in contract_files:
                         contract_name = os.path.splitext(contract_file)[0]

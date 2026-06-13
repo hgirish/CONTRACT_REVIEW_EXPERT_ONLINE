@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import asyncio
 from utils import save_file, load_policies_index, load_report, list_files
-from chat import clear_chat_cache
 from contract_analysis_workflow import ContractAnalysisWorkflow
 
 
@@ -75,6 +74,8 @@ def render_contracts_section(is_analyzing, analyzing_file):
             with col_d:
                 if st.button("❌", key="delete_contract_{file}"):
                     try:
+                        from chat import clear_chat_cache
+
                         os.remove(os.path.join("data/contracts", file))
                         if os.path.exists(report_path):
                             os.remove(report_path)
@@ -115,6 +116,8 @@ def render_contracts_section(is_analyzing, analyzing_file):
                     f.write("COMPLIANCE CHECK:\n")
                     f.write("=" * 50 + "\n")
                     f.write(compliance_report)
+                from chat import clear_chat_cache
+
                 clear_chat_cache(contract_name)
                 st.session_state["is_analyzing"] = False
                 del st.session_state["is_analyzing_file"]

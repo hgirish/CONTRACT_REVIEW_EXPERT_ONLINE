@@ -1,5 +1,4 @@
 import streamlit as st
-from chat import render_chat_interface
 
 
 def render_reports_section():
@@ -66,6 +65,7 @@ def render_reports_section():
 
         with chat_col:
             # Render the chat interface for the current contract
+            from chat import render_chat_interface
             render_chat_interface(contract_name=contract_name)
 
         return True
