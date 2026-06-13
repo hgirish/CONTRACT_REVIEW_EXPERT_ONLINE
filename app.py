@@ -1,102 +1,39 @@
+import os
 import streamlit as st
-from policies import render_policies_section
-from contracts import render_contracts_section
-from reports import render_reports_section
+from llama_index.core import Settings
+from llama_index.llms.ollama import Ollama
+from llama_index.embeddings.ollama import OllamaEmbedding
 
-# Set page config to wide layout
-st.set_page_config(
-    page_title="Contract Advisor",
-    layout="wide",
-    page_icon="📋",
-    initial_sidebar_state="collapsed"
+st.title("🦙 LlamaIndex + Ollama Cloud App")
+
+# 1. Safely retrieve the API Key from Streamlit Secrets
+# The underlying Ollama library automatically looks for OLLAMA_API_KEY
+if "OLLAMA_API_KEY" in st.secrets:
+    os.environ["OLLAMA_API_KEY"] = st.secrets["OLLAMA_API_KEY"]
+else:
+    st.error("Missing OLLAMA_API_KEY in Streamlit Secrets!")
+    st.stop()
+
+# 2. Configure the Cloud LLM model (Remove localhost base_url)
+# The ':cloud' suffix tells Ollama to execute inference on remote cloud GPUs
+Settings.llm = Ollama(
+    model="qwen3-coder-next:cloud",
+    temperature=0.8,
+    context_window=16000,
+    request_timeout=6030.0
 )
 
-# App title and description
-st.title("📋 Contract Review Expert")
-st.markdown(
-    "Upload policies and contracts to perform AI-powered risk analysis and compliance checks")
+# 3. Configure the Embedding model for Cloud
+# For cloud applications, you should use the cloud-optimized variant
+Settings.embed_model = OllamaEmbedding(
+    model_name="nomic-embed-text:cloud",
+    request_timeout=6000
+)
 
-# --  State variables ---
-is_analyzing = st.session_state.get("is_analyzing", False)
-analyzing_file = st.session_state.get("is_analyzing_file", None)
-
-# -- TOP ROW: Policies and Contracts side by side ---
-col1, col2 = st.columns(2, gap="large")
-
-# -- Policies section
-with col1:
-    policies_modified = render_policies_section(is_analyzing=is_analyzing)
-
-# -- Contracts section
-with col2:
-    contracts_modified, analysis_started, analysis_completed = render_contracts_section(
-        is_analyzing=is_analyzing, analyzing_file=analyzing_file)
-
-# Handle state changes
-if analysis_started or analysis_completed:
-    st.rerun()
-
-# Add separator
-st.markdown("----")
-
-# --- Reports and Chat section ---
-reports_displayed = render_reports_section()
-
-# --- Footer with helpful information ---
-if not reports_displayed:
-    st.markdown("---")
-
-    with st.expander("ℹ️ How to use this application"):
-        st.markdown("""
-        ### Getting Started:
-        
-        1. **Upload Policies** (left panel)
-           - Add company policies, guidelines, or standards
-           - Supported formats: PDF, TXT
-           - These will be used as reference for compliance checks
-        
-        2. **Upload Contracts** (right panel)
-           - Add contracts you want to analyze
-           - Supported formats: PDF, TXT
-           - Click 'Analyze' to generate risk and compliance reports
-        
-        3. **Review Reports**
-           - Click 'See report' to view the AI analysis
-           - The chat interface will appear alongside the report
-           - Ask questions about risks, compliance, or contract terms
-        
-        ### Features:
-        - **Risk Analysis**: Identifies potential risks in contracts
-        - **Compliance Check**: Compares contracts against your policies
-        - **Interactive Chat**: Ask specific questions about any contract
-        - **Document Management**: Easy upload, view, and delete functionality
-        """)
-
-    # Show application status
-    st.sidebar.title("🔧 Application Status")
-
-    if is_analyzing:
-        st.sidebar.warning(f"⏳ Analyzing: {analyzing_file}")
-        st.sidebar.progress(0.5)  # Inderminate progress
-    else:
-        st.sidebar.success("✅ Ready for analysis")
-
-    # Quick stats in sidebar
-    try:
-        from utils import list_files
-        import os
-
-        policy_count = len(list_files("data/policies"))
-        contract_count = len(list_files("data/contracts"))
-
-        report_count = 0
-
-        if os.path.exists("data/reports"):
-            report_count = len([f for f in os.listdir(
-                "data/reports") if f.endswith(".txt")])
-
-        st.sidebar.metric("Policies", policy_count)
-        st.sidebar.metric("Contracts", contract_count)
-        st.sidebar.metric("Reports", report_count)
-    except Exception:
-        pass  # If there's an error getting stats, just skip the sidebar metrics
+# --- Basic UI Test ---
+user_query = st.text_input("Ask a coding question:")
+if user_query:
+    with st.spinner("Streaming from Ollama Cloud..."):
+        response = Settings.llm.complete(user_query)
+        st.markdown("### Response:")
+        st.write(str(response))
